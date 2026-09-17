@@ -2,33 +2,56 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>AI Эпидемиологический Агент</title>
+    <title>AI Эпидемиологический Агент STROBE</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; line-height: 1.6; }
-        .card { border: 1px solid #ccc; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        label { display: block; margin-top: 15px; font-weight: bold; }
-        input, select { width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; }
-        button { margin-top: 20px; width: 100%; padding: 10px; background: #0070f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 700px; margin: 30px auto; padding: 20px; line-height: 1.6; background-color: #f8fafc; color: #1e293b; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h2 { margin-top: 0; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-size: 22px; }
+        label { display: block; margin-top: 15px; font-weight: 600; color: #334155; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: #0070f3; box-shadow: 0 0 0 3px rgba(0,112,243,0.1); }
+        button { margin-top: 25px; width: 100%; padding: 12px; background: #0070f3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; transition: background 0.2s; }
         button:hover { background: #0051a8; }
-        .result { margin-top: 20px; padding: 15px; background: #f0f7ff; border-left: 4px solid #0070f3; display: none; }
+        .result { margin-top: 25px; padding: 20px; background: #f0fdf4; border-left: 4px solid #16a34a; border-radius: 4px; display: none; }
+        .dynamic-group { border-left: 3px solid #0070f3; padding-left: 15px; margin-top: 10px; background-color: #f8fafc; padding-top: 5px; padding-bottom: 15px; padding-right: 15px; border-radius: 0 8px 8px 0; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>🤖 AI-Агент расчета выборки (STROBE)</h2>
+        <h2>🤖 Полноценный AI-Агент расчета выборки (STROBE Элементы 4 и 10)</h2>
         
         <label>Дизайн исследования (STROBE Item 4):</label>
-        <select id="design">
+        <select id="design" onchange="toggleFields()">
             <option value="cross">Одномоментное исследование (Cross-Sectional)</option>
+            <option value="case-control">Исследование «Случай-Контроль» (Case-Control)</option>
+            <option value="cohort">Когортное исследование (Cohort Study)</option>
         </select>
 
-        <label>Ожидаемая распространенность признака (p, от 0 до 1):</label>
-        <input type="number" id="prevalence" value="0.05" step="0.01" min="0" max="1">
+        <!-- Группа полей для Одномоментного исследования -->
+        <div id="crossFields">
+            <label>Ожидаемая распространенность признака (p, от 0 до 1):</label>
+            <input type="number" id="prevalence" value="0.05" step="0.01" min="0" max="1">
 
-        <label>Предельно допустимая погрешность (d, от 0 до 1):</label>
-        <input type="number" id="precision" value="0.02" step="0.005" min="0" max="1">
+            <label>Предельно допустимая погрешность (d, от 0 до 1):</label>
+            <input type="number" id="precision" value="0.02" step="0.005" min="0" max="1">
+        </div>
 
-        <label>Уровень ошибки I рода (Alpha):</label>
+        <!-- Группа полей для Случай-Контроль и Когортных -->
+        <div id="advancedFields" class="dynamic-group" style="display: none;">
+            <label id="p0Label">Частота воздействия в контрольной группе (p0, от 0 до 1):</label>
+            <input type="number" id="p0" value="0.15" step="0.01" min="0" max="1">
+
+            <label id="effectLabel">Ожидаемое Отношение Шансов (Odds Ratio, OR):</label>
+            <input type="number" id="effectSize" value="2.5" step="0.1" min="0.1">
+            
+            <label>Статистическая мощность исследования (1 - Beta):</label>
+            <select id="power">
+                <option value="0.80">80% (Стандарт качества)</option>
+                <option value="0.90">90% (Повышенная мощность)</option>
+            </select>
+        </div>
+
+        <label>Уровень ошибки I рода (Alpha / Значимость):</label>
         <select id="alpha">
             <option value="0.05">0.05 (95% доверительный интервал)</option>
             <option value="0.01">0.01 (99% доверительный интервал)</option>
@@ -37,24 +60,90 @@
         <button onclick="calculateSample()">Рассчитать объем выборки</button>
 
         <div id="resultBlock" class="result">
-            <strong>🎯 Результат расчета:</strong> <span id="sampleOutput"></span> человек.
-            <p id="strobeOutput" style="font-size: 13px; color: #555; margin-top: 10px;"></p>
+            <div id="calcOutcome" style="font-size: 18px; color: #166534; font-weight: bold;"></div>
+            <p id="strobeOutput" style="font-size: 14px; color: #334155; margin-top: 12px; background: white; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;"></p>
         </div>
     </div>
 
     <script>
+        function toggleFields() {
+            const design = document.getElementById('design').value;
+            const crossFields = document.getElementById('crossFields');
+            const advancedFields = document.getElementById('advancedFields');
+            const p0Label = document.getElementById('p0Label');
+            const effectLabel = document.getElementById('effectLabel');
+
+            if (design === 'cross') {
+                crossFields.style.display = 'block';
+                advancedFields.style.display = 'none';
+            } else {
+                crossFields.style.display = 'none';
+                advancedFields.style.display = 'block';
+                
+                if (design === 'case-control') {
+                    p0Label.innerText = "Частота воздействия фактора риска в контрольной группе (p0):";
+                    effectLabel.innerText = "Ожидаемое Отношение Шансов (Odds Ratio - OR):";
+                } else {
+                    p0Label.innerText = "Частота исхода в неэкспонированной группе (p0):";
+                    effectLabel.innerText = "Ожидаемый Относительный Риск (Relative Risk - RR):";
+                }
+            }
+        }
+
         function calculateSample() {
-            const p = parseFloat(document.getElementById('prevalence').value);
-            const d = parseFloat(document.getElementById('precision').value);
+            const design = document.getElementById('design').value;
             const alpha = parseFloat(document.getElementById('alpha').value);
+            const zAlpha = alpha === 0.01 ? 2.576 : 1.96;
             
-            const z = alpha === 0.01 ? 2.576 : 1.96;
-            const n = Math.ceil((Math.pow(z, 2) * p * (1 - p)) / Math.pow(d, 2));
+            let nResultText = "";
+            let strobeText = "";
+
+            if (design === 'cross') {
+                const p = parseFloat(document.getElementById('prevalence').value);
+                const d = parseFloat(document.getElementById('precision').value);
+                const n = Math.ceil((Math.pow(zAlpha, 2) * p * (1 - p)) / Math.pow(d, 2));
+                
+                nResultText = `🎯 Минимальный объем выборки: ${n} человек.`;
+                strobeText = `Расчет минимального объема выборки для данного обсервационного исследования выполнен в соответствии с руководством STROBE (Элемент 10). Использовалась классическая формула Кохрана для оценки долей в одномоментных (cross-sectional) исследованиях. Расчет проводился при априорной ожидаемой распространенности признака p=${p*100}%, предельной погрешности d=${d*100}% и уровне ошибки I рода alpha=${alpha} (95% ДИ).`;
+            } else {
+                const p0 = parseFloat(document.getElementById('p0').value);
+                const effect = parseFloat(document.getElementById('effectSize').value);
+                const powerVal = document.getElementById('power').value;
+                
+                // Исправлено: точное считывание Z_beta коэффициента мощности
+                const zBeta = powerVal === "0.90" ? 1.282 : 0.842; 
+                
+                let p1 = 0;
+                if (design === 'case-control') {
+                    p1 = (effect * p0) / (1 - p0 + (effect * p0)); 
+                } else {
+                    p1 = p0 * effect; 
+                }
+                
+                if (p1 >= 1 || p1 <= 0 || isNaN(p1)) {
+                    alert("Ошибка: При заданных параметрах математически невозможно рассчитать выборку. Проверьте размер эффекта (OR/RR) или p0.");
+                    return;
+                }
+                
+                const pBar = (p0 + p1) / 2;
+                const numerator = Math.pow(zAlpha * Math.sqrt(2 * pBar * (1 - pBar)) + zBeta * Math.sqrt(p0 * (1 - p0) + p1 * (1 - p1)), 2);
+                const denominator = Math.pow(p1 - p0, 2);
+                const nPerGroup = Math.ceil(numerator / denominator);
+                
+                const designName = design === 'case-control' ? "«случай-контроль»" : "когортного";
+                const effectName = design === 'case-control' ? `Отношении Шансов (OR) = ${effect}` : `Относительном Риске (RR) = ${effect}`;
+                const powerPercent = powerVal === "0.90" ? "90%" : "80%";
+
+                nResultText = `🎯 Объем выборки: по ${nPerGroup} человек в КАЖДОЙ группе (Всего: ${nPerGroup * 2} участников).`;
+                strobeText = `В рамках соблюдения критериев STROBE (Элемент 10: Объем выборки) для аналитического ${designName} исследования был проведен расчет мощности. При уровне значимости (alpha) ${alpha} и целевой статистической мощности (1-beta) ${powerPercent}, а также при базовой частоте p0=${(p0*100).toFixed(1)}% в группе сравнения и ожидаемом ${effectName}, минимально необходимый объем составил ${nPerGroup} участников в основной группе и ${nPerGroup} участников в группе контроля.`;
+            }
             
-            document.getElementById('sampleOutput').innerText = n;
-            document.getElementById('strobeOutput').innerText = `Расчет минимального объема выборки выполнен по формуле Кохрана (STROBE Элемент 10). При p=${p*100}%, d=${d*100}% и alpha=${alpha}, минимально необходимая выборка составляет строго ${n} участников.`;
+            document.getElementById('calcOutcome').innerText = nResultText;
+            document.getElementById('strobeOutput').innerText = strobeText;
             document.getElementById('resultBlock').style.display = 'block';
         }
     </script>
 </body>
 </html>
+
+
