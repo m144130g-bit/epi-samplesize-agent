@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Эпидемиологический Агент</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; line-height: 1.6; }
+        .card { border: 1px solid #ccc; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        label { display: block; margin-top: 15px; font-weight: bold; }
+        input, select { width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; }
+        button { margin-top: 20px; width: 100%; padding: 10px; background: #0070f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0051a8; }
+        .result { margin-top: 20px; padding: 15px; background: #f0f7ff; border-left: 4px solid #0070f3; display: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>🤖 AI-Агент расчета выборки (STROBE)</h2>
+        
+        <label>Дизайн исследования (STROBE Item 4):</label>
+        <select id="design">
+            <option value="cross">Одномоментное исследование (Cross-Sectional)</option>
+        </select>
+
+        <label>Ожидаемая распространенность признака (p, от 0 до 1):</label>
+        <input type="number" id="prevalence" value="0.05" step="0.01" min="0" max="1">
+
+        <label>Предельно допустимая погрешность (d, от 0 до 1):</label>
+        <input type="number" id="precision" value="0.02" step="0.005" min="0" max="1">
+
+        <label>Уровень ошибки I рода (Alpha):</label>
+        <select id="alpha">
+            <option value="0.05">0.05 (95% доверительный интервал)</option>
+            <option value="0.01">0.01 (99% доверительный интервал)</option>
+        </select>
+
+        <button onclick="calculateSample()">Рассчитать объем выборки</button>
+
+        <div id="resultBlock" class="result">
+            <strong>🎯 Результат расчета:</strong> <span id="sampleOutput"></span> человек.
+            <p id="strobeOutput" style="font-size: 13px; color: #555; margin-top: 10px;"></p>
+        </div>
+    </div>
+
+    <script>
+        function calculateSample() {
+            const p = parseFloat(document.getElementById('prevalence').value);
+            const d = parseFloat(document.getElementById('precision').value);
+            const alpha = parseFloat(document.getElementById('alpha').value);
+            
+            const z = alpha === 0.01 ? 2.576 : 1.96;
+            const n = Math.ceil((Math.pow(z, 2) * p * (1 - p)) / Math.pow(d, 2));
+            
+            document.getElementById('sampleOutput').innerText = n;
+            document.getElementById('strobeOutput').innerText = `Расчет минимального объема выборки выполнен по формуле Кохрана (STROBE Элемент 10). При p=${p*100}%, d=${d*100}% и alpha=${alpha}, минимально необходимая выборка составляет строго ${n} участников.`;
+            document.getElementById('resultBlock').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
